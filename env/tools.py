@@ -29,7 +29,8 @@ class IncidentDesk:
         if p != self.root and self.root not in p.parents:
             raise ToolError(f"path outside the world: {path}")
         if not p.exists():
-            raise ToolError(f"no such file or directory: {path}")
+            parent = next((q for q in p.parents if q.exists()), self.root)
+            raise ToolError(f"no such file or directory: {path} (use ls('{self._vpath(parent)}') to see what exists)")
         return p
 
     def _vpath(self, p: Path) -> str:
@@ -66,7 +67,8 @@ class IncidentDesk:
     def grep(self, pattern: str, path: str) -> str:
         p = self._resolve(path)
         if p.is_dir():
-            raise ToolError(f"{path} is a directory; grep takes a single file")
+            names = ", ".join(sorted(c.name for c in p.iterdir()))
+            raise ToolError(f"{path} is a directory; grep takes a single file. Files here: {names}")
         try:
             rx = re.compile(pattern)
         except re.error:

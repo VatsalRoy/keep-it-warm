@@ -92,3 +92,18 @@ def test_context_overflow_ends_episode(setup):
     assert ep["end_reason"] == "context_overflow"
     with pytest.raises(ContextOverflow):
         FakeClient(max_context=5).chat([{"role": "user", "content": "x" * 100}])
+
+
+def test_system_prompt_leaks_no_task_ids(setup):
+    """The prompt's examples must not contain any request id or deploy id used by a task."""
+    import re
+
+    from agent.prompt import system_prompt
+    _, tasks = setup
+    prompt = system_prompt()
+    for t in tasks.values():
+        for rid in re.findall(r"r-\d{4}", t["question"]):
+            assert rid not in prompt, rid
+        for item in t["answer"]:
+            if re.fullmatch(r"d-\d{4}", item):
+                assert item not in prompt, item
