@@ -1,0 +1,30 @@
+{
+  "model": "Qwen/Qwen3-4B-Instruct-2507",
+  "run_tag": "fea868",
+  "rows": [
+    {
+      "prompt_tokens": 5553,
+      "cached_tokens_usage": 0,
+      "ttft_ms": 14162.6,
+      "cache_hits_metric": 0,
+      "cache_queries_metric": 5553,
+      "request": "1 cold: new prefix"
+    },
+    {
+      "prompt_tokens": 5551,
+      "cached_tokens_usage": 5520,
+      "ttft_ms": 229.4,
+      "cache_hits_metric": 5520,
+      "cache_queries_metric": 5551,
+      "request": "2 warm: same prefix"
+    },
+    {
+      "prompt_tokens": 5554,
+      "cached_tokens_usage": 0,
+      "ttft_ms": 13273.9,
+      "cache_hits_metric": 0,
+      "cache_queries_metric": 5554,
+      "request": "3 edited: 1 char changed at start"
+    }
+  ]
+}
