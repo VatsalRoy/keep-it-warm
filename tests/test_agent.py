@@ -91,4 +91,4 @@ def test_context_overflow_ends_episode(setup):
     rows, ep = run_episode(tasks["t1-errcount-1"], desk, client, FullHistory())
     assert ep["end_reason"] == "context_overflow"
     with pytest.raises(ContextOverflow):
-        FakeClient(max_context=5).chat([{"rule": "x"} | {"role": "user", "content": "x" * 100}])
+        FakeClient(max_context=5).chat([{"role": "user", "content": "x" * 100}])
