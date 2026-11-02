@@ -55,8 +55,9 @@ def test_fake_episode_solves_task_and_keeps_cache_warm(setup):
     client = FakeClient()
     client.load_script(oracle_script(desk, task))
     rows, ep = run_episode(task, desk, client, FullHistory())
-    assert ep["correct"] and ep["end_reason"] == "submitted"
-    assert ep["submitted"] == "d-1050, aisha.bello"
+    q = ep["questions"][0]
+    assert q["correct"] and q["end"] == "submitted" and ep["end_reason"] == "completed"
+    assert q["submitted"] == "d-1050, aisha.bello"
     for r in rows[1:]:
         # P0 only appends, so the prompt never changes before the previous end ...
         assert r["first_changed_token_idx"] == r["prev_prompt_tokens"]
@@ -72,16 +73,17 @@ def test_unparseable_reply_is_logged_and_agent_continues(setup):
     client.load_script(["I think I will look around first.", *oracle_script(desk, task)])
     rows, ep = run_episode(task, desk, client, FullHistory())
     assert rows[0]["ok"] is False and "error" in rows[0]
-    assert ep["correct"]
+    assert ep["questions"][0]["correct"]
     assert "Could not parse" in ep["transcript"][3]["content"]
 
 
-def test_turn_limit(setup):
+def test_question_turn_limit(setup):
     desk, tasks = setup
     client = FakeClient()
     client.load_script(['{"tool": "ls", "args": {"path": "/"}}'] * 10)
-    rows, ep = run_episode(tasks["t1-errcount-1"], desk, client, FullHistory(), max_turns=4)
-    assert len(rows) == 4 and ep["end_reason"] == "turn_limit" and not ep["correct"]
+    rows, ep = run_episode(tasks["t1-errcount-1"], desk, client, FullHistory(), max_turns_per_question=4)
+    q = ep["questions"][0]
+    assert len(rows) == 4 and q["end"] == "question_turn_limit" and not q["correct"]
 
 
 def test_context_overflow_ends_episode(setup):
@@ -90,10 +92,10 @@ def test_context_overflow_ends_episode(setup):
     client.load_script(['{"tool": "read", "args": {"path": "/deploys.csv", "n_lines": 60}}'] * 10)
     rows, ep = run_episode(tasks["t1-errcount-1"], desk, client, FullHistory())
     assert ep["end_reason"] == "context_overflow"
+    assert ep["questions"][0]["end"] == "context_overflow"
     with pytest.raises(ContextOverflow):
         FakeClient(max_context=5).chat([{"role": "user", "content": "x" * 100}])
-
-
+        
 def test_system_prompt_leaks_no_task_ids(setup):
     """The prompt's examples must not contain any request id or deploy id used by a task."""
     import re

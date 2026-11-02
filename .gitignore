@@ -219,3 +219,4 @@ __marimo__/
 .venv/
 world/
 runs/fake_*/
+runs/fake_sessions/

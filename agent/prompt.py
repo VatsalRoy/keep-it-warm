@@ -63,11 +63,16 @@ def system_prompt(header: str = "", tool_order: list[str] | None = None) -> str:
         'Example: {"thought": "find OOM events", "tool": "grep", '
         '"args": {"pattern": "event=OOMKilled", "path": "/logs/search/2026-10-03.log"}}\n'
         "When you know the answer, call submit with args {\"answer\": \"...\"} in the exact format the\n"
-        "question asks for. You have at most 25 turns."
+        "question asks for. You have a limited number of turns per question."
     )
 
-def task_message(task: dict) -> str:
-    return f"Question: {task['question']}"
+def question_message(task: dict, index: int = 0, total: int = 1) -> str:
+    """Single-question episodes keep the original wording; sessions number the questions."""
+    if total == 1:
+        return f"Question: {task['question']}"
+    intro = (f"You will be asked {total} questions, one at a time. Answer each with submit(); "
+             "the next question follows.\n\n") if index == 0 else ""
+    return f"{intro}Question {index + 1} of {total}: {task['question']}"
 
 
 def observation_message(tool: str, output: str) -> str:

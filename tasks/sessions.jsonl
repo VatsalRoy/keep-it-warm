@@ -1,0 +1,12 @@
+{"id": "s01", "tasks": ["t1-most5xx-3", "t2-runbook-2", "t1-errcount-3", "t1-errcount-2"]}
+{"id": "s02", "tasks": ["t3-trace-1", "t2-config-2", "t3-trace-4", "t3-rootcause-1"]}
+{"id": "s03", "tasks": ["t2-runbook-1", "t2-oom-1", "t3-rootcause-2", "t1-most5xx-1"]}
+{"id": "s04", "tasks": ["t2-oom-2", "t1-oncall-1", "t3-trace-2", "t3-rootcause-3"]}
+{"id": "s05", "tasks": ["t3-trace-3", "t2-config-1", "t1-most5xx-2", "t2-oom-3"]}
+{"id": "s06", "tasks": ["t3-rootcause-4", "t1-errcount-1", "t1-oncall-2", "t2-config-3"]}
+{"id": "s07", "tasks": ["t1-errcount-2", "t3-rootcause-2", "t2-config-2", "t3-trace-3"]}
+{"id": "s08", "tasks": ["t2-oom-3", "t1-oncall-2", "t2-runbook-2", "t2-oom-2"]}
+{"id": "s09", "tasks": ["t2-config-3", "t3-trace-2", "t2-config-1", "t3-trace-1"]}
+{"id": "s10", "tasks": ["t3-rootcause-3", "t3-trace-4", "t2-oom-1", "t3-rootcause-4"]}
+{"id": "s11", "tasks": ["t1-most5xx-1", "t1-most5xx-2", "t1-oncall-1", "t1-most5xx-3"]}
+{"id": "s12", "tasks": ["t3-rootcause-1", "t1-errcount-3", "t1-errcount-1", "t2-runbook-1"]}
