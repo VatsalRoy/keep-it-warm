@@ -48,6 +48,19 @@ def run_episode(tasks: list[dict] | dict, desk: IncidentDesk, client, policy, se
     q, q_turns, turn, end_reason = 0, 0, 0, "completed"
     t_start = time.perf_counter()
 
+    def make_row(reply, sent_tokens, prev, logical, q_idx, task) -> dict:
+        return {
+            "episode_id": episode_id, "session_id": session_id, "task_id": task["id"], "tier": task["tier"],
+            "question_idx": q_idx, "policy": policy.name, "seed": seed, "turn": turn,
+            "prompt_tokens": reply.prompt_tokens, "cached_tokens": reply.cached_tokens,
+            "uncached_tokens": reply.prompt_tokens - reply.cached_tokens,
+            "completion_tokens": reply.completion_tokens,
+            "logical_tokens": logical, "active_context_tokens": len(sent_tokens),
+            "first_changed_token_idx": None if prev is None else first_diff(prev, sent_tokens),
+            "prev_prompt_tokens": None if prev is None else len(prev),
+            "ttft_ms": reply.ttft_ms, "e2e_ms": reply.e2e_ms, "cached_source": reply.cached_source,
+        }
+
     def next_question(prefix: str) -> bool:
         """Move on to the next question. Returns False when the session is over."""
         nonlocal q, q_turns
@@ -62,6 +75,11 @@ def run_episode(tasks: list[dict] | dict, desk: IncidentDesk, client, policy, se
         q_turns += 1
         task = tasks[q]
         sent = policy.build(history, turn)
+        for extra_msgs, extra_reply in policy.drain_calls():  # e.g. P4's summary request
+            extra_tokens = client.tokenize(extra_msgs)
+            rows.append({**make_row(extra_reply, extra_tokens, prev_tokens, len(extra_tokens), q, task),
+                         "action": "summarize", "ok": True})
+            prev_tokens = extra_tokens
         sent_tokens = client.tokenize(sent)
         logical = len(sent_tokens) if sent == history else len(client.tokenize(history))
         try:
@@ -71,17 +89,7 @@ def run_episode(tasks: list[dict] | dict, desk: IncidentDesk, client, policy, se
             results[q]["end"] = "context_overflow"
             break
 
-        row = {
-            "episode_id": episode_id, "session_id": session_id, "task_id": task["id"], "tier": task["tier"],
-            "question_idx": q, "policy": policy.name, "seed": seed, "turn": turn,
-            "prompt_tokens": reply.prompt_tokens, "cached_tokens": reply.cached_tokens,
-            "uncached_tokens": reply.prompt_tokens - reply.cached_tokens,
-            "completion_tokens": reply.completion_tokens,
-            "logical_tokens": logical, "active_context_tokens": len(sent_tokens),
-            "first_changed_token_idx": None if prev_tokens is None else first_diff(prev_tokens, sent_tokens),
-            "prev_prompt_tokens": None if prev_tokens is None else len(prev_tokens),
-            "ttft_ms": reply.ttft_ms, "e2e_ms": reply.e2e_ms, "cached_source": reply.cached_source,
-        }
+        row = make_row(reply, sent_tokens, prev_tokens, logical, q, task)
         prev_tokens = sent_tokens
         history.append({"role": "assistant", "content": reply.text, "kind": "action"})
         results[q]["turns"] = q_turns

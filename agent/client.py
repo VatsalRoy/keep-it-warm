@@ -138,7 +138,10 @@ class FakeClient:
                 warm = False
             self.cache.add(key)
         cached = min(cached, len(toks) - 1)  # like vLLM, always recompute the last token
-        text = self.script.pop(0) if self.script else '{"tool": "submit", "args": {"answer": ""}}'
+        if messages[-1]["content"].startswith("Pause and summarize"):  # P4's summary request
+            text = f"(fake summary of {len(messages)} messages)"
+        else:
+            text = self.script.pop(0) if self.script else '{"tool": "submit", "args": {"answer": ""}}'
         uncached = len(toks) - cached
         ttft = 5 + uncached * 2.5  # ms; pretend ~400 tokens/s cold prefill, like the T4
         return Reply(text, len(toks), cached, max(1, len(text) // 4), round(ttft, 1),

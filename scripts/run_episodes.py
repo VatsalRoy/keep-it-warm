@@ -25,8 +25,21 @@ from agent.pricing import cost  # noqa: E402
 from env.oracle import Oracle  # noqa: E402
 from env.tools import IncidentDesk  # noqa: E402
 from policies.full import FullHistory  # noqa: E402
+from policies.hygiene_bug import HygieneBug  # noqa: E402
+from policies.mask_batched import BatchedMask  # noqa: E402
+from policies.mask_rolling import RollingMask  # noqa: E402
+from policies.sliding import SlidingWindow  # noqa: E402
+from policies.summary import SummaryFold  # noqa: E402
 
-POLICIES = {"full": FullHistory}
+# name -> factory(args, client). A NEW policy object is made for every episode.
+POLICIES = {
+    "full": lambda a, c: FullHistory(),                                  # P0
+    "window": lambda a, c: SlidingWindow(k=a.k or 6),                    # P1
+    "mask": lambda a, c: RollingMask(k=a.k or 4),                        # P2
+    "batch": lambda a, c: BatchedMask(every=a.every, k=a.k or 4),        # P3
+    "summary": lambda a, c: SummaryFold(c, threshold=a.threshold),       # P4
+    "timestamp": lambda a, c: HygieneBug(),                              # P5
+}
 
 
 def oracle_script(desk: IncidentDesk, task: dict) -> list[str]:
@@ -59,6 +72,9 @@ def main() -> None:
     ap.add_argument("--sessions", help="comma-separated session ids (default: all)")
     ap.add_argument("--tasks", help="comma-separated task ids, each run as its own 1-question episode")
     ap.add_argument("--limit", type=int)
+    ap.add_argument("--k", type=int, help="window size (P1, default 6) or outputs kept (P2/P3, default 4)")
+    ap.add_argument("--every", type=int, default=6, help="P3: mask every N turns")
+    ap.add_argument("--threshold", type=int, default=8192, help="P4: summarize above this many tokens")
     ap.add_argument("--seeds", default="0", help="comma-separated, e.g. 0,1")
     ap.add_argument("--temperature", type=float, default=0.0)
     ap.add_argument("--world", default="world")
@@ -84,7 +100,8 @@ def main() -> None:
                 if not a.no_reset and not client.reset_cache():
                     sys.exit("Could not reset the prefix cache. Start vLLM with VLLM_SERVER_DEV_MODE=1, "
                              "or pass --no-reset (results will then depend on episode order).")
-                rows, ep = run_episode(tasks, desk, client, POLICIES[a.policy](), seed=seed, session_id=sid)
+                policy = POLICIES[a.policy](a, client)
+                rows, ep = run_episode(tasks, desk, client, policy, seed=seed, session_id=sid)
                 for r in rows:
                     ft.write(json.dumps(r) + "\n")
                 fe.write(json.dumps(ep) + "\n")
