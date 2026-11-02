@@ -1,8 +1,10 @@
 """Side-by-side table of several run folders (one per policy).
 
     python scripts/compare_runs.py runs/fake_full runs/fake_window runs/fake_mask ...
+    python scripts/compare_runs.py --sessions s01,s05,s07,s12 runs/main/P0_full runs/main/P5_timestamp
 
 The first folder is the reference (normally P0): the last columns show the change vs it.
+--sessions restricts every folder to the same sessions, so subsets are compared fairly.
 """
 from __future__ import annotations
 
@@ -14,9 +16,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from agent.pricing import cost, naive_cost  # noqa: E402
 
 
-def stats(run: Path) -> dict:
+def stats(run: Path, only: set[str] | None = None) -> dict:
     turns = [json.loads(line) for line in open(run / "turns.jsonl", encoding="utf-8")]
     eps = [json.loads(line) for line in open(run / "episodes.jsonl", encoding="utf-8")]
+    if only:
+        turns = [r for r in turns if r["session_id"] in only]
+        eps = [e for e in eps if e["session_id"] in only]
     p = sum(r["prompt_tokens"] for r in turns)
     c = sum(r["cached_tokens"] for r in turns)
     o = sum(r["completion_tokens"] for r in turns)
@@ -34,7 +39,11 @@ def stats(run: Path) -> dict:
 
 
 def main() -> None:
-    rows = [stats(Path(d)) for d in sys.argv[1:]]
+    args = sys.argv[1:]
+    only = None
+    if args and args[0] == "--sessions":
+        only, args = set(args[1].split(",")), args[2:]
+    rows = [stats(Path(d), only) for d in args]
     ref = rows[0]
     print(f"{'policy':<14} {'sess':>4} {'acc':>5} {'turns':>5} {'peak':>7} {'tokens':>9} {'cached':>6} "
           f"{'naive$B':>8} {'$A':>7} {'$B':>7} {'tokens':>7} {'naive$B':>7} {'true$A':>7} {'true$B':>7} {'GPU min':>7}")

@@ -83,6 +83,7 @@ def main() -> None:
     ap.add_argument("--fake", action="store_true", help="offline fake model (replays the oracle)")
     ap.add_argument("--fake-max-context", type=int, default=28672)
     ap.add_argument("--no-reset", action="store_true", help="don't empty the cache between episodes")
+    ap.add_argument("--resume", action="store_true", help="skip sessions already saved in <out>/episodes.jsonl")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
 
@@ -91,10 +92,16 @@ def main() -> None:
     client = FakeClient(a.fake_max_context) if a.fake else VLLMClient(a.base, a.model, temperature=a.temperature)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
+    done = set()
+    if a.resume and (out / "episodes.jsonl").exists():
+        done = {(e["session_id"], e["seed"]) for e in map(json.loads, open(out / "episodes.jsonl", encoding="utf-8"))}
+        print(f"resume: {len(done)} episode(s) already saved in {out}, skipping them")
 
     with open(out / "turns.jsonl", "a") as ft, open(out / "episodes.jsonl", "a") as fe:
         for seed in [int(s) for s in a.seeds.split(",")]:
             for sid, tasks in episodes:
+                if (sid, seed) in done:
+                    continue
                 if a.fake:
                     client.load_script([act for t in tasks for act in oracle_script(desk, t)])
                 if not a.no_reset and not client.reset_cache():
