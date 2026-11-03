@@ -1,0 +1,29 @@
+policy,run,session,q,task,turns,p0_turns,submitted,gold,auto_tags,manual_tag
+P1 window,P1_window6,s03,3,t3-rootcause-2,6,9,"orders, d-1006, jonas.berg","orders, d-1006, priya.nair",context_edited_during_q,reasoning_error? (on-call)
+P1 window,P1_window6,s05,2,t2-config-1,9,7,"db.pool_size, 8, 1234","db.pool_size, 8, d-1047",context_edited_during_q,lost_clue_after_edit? (answered 1234 = prompt example id)
+P1 window,P1_window6,s06,4,t2-config-3,2,2,"cache.ttl_s, 5, d-1059","cache.ttl_s, 5, d-1057",context_edited_during_q,reasoning_error? (picked d-1059 not d-1057)
+P1 window,P1_window6,s08,2,t1-oncall-2,2,3,yuki.tanaka,jonas.berg,answered_fast;context_edited_during_q,reasoning_error? (on-call guessed)
+P1 window,P1_window6,s08,3,t2-runbook-2,7,6,Run `opsctl idp backoff --minutes 15`,opsctl idp backoff --minutes 15,format_slip;context_edited_during_q,format_slip
+P2 mask,P2_mask4,s02,1,t3-trace-1,7,6,"api-gateway,auth,inventory,payments,orders","api-gateway, auth, orders, inventory, payments",format_slip;context_edited_during_q,reasoning_error (wrong order)
+P2 mask,P2_mask4,s03,1,t2-runbook-1,8,7,Run `opsctl heap dump --live`,opsctl heap dump --live,format_slip;context_edited_during_q,format_slip
+P2 mask,P2_mask4,s03,3,t3-rootcause-2,10,9,"orders, unknown, alex.jones","orders, d-1006, priya.nair",gave_up;context_edited_during_q,reasoning_error (CSV query syntax; invented on-call 'alex.jones')
+P2 mask,P2_mask4,s05,2,t2-config-1,20,7,,"db.pool_size, 8, d-1047",turn_limit;repeated_calls;context_edited_during_q,re_read_loop
+P2 mask,P2_mask4,s05,3,t1-most5xx-2,9,6,inventory,orders,context_edited_during_q,lost_clue_after_edit (masked counts read as 0)
+P2 mask,P2_mask4,s11,2,t1-most5xx-2,10,6,api-gateway,orders,repeated_calls;context_edited_during_q,lost_clue_after_edit (winner's count masked)
+P2 mask,P2_mask4,s12,2,t1-errcount-3,2,3,0,3,answered_fast;context_edited_during_q,reasoning_error (grepped LEVEL=ERROR)
+P2 mask,P2_mask4,s12,3,t1-errcount-1,2,2,0,4,context_edited_during_q,reasoning_error (grepped LEVEL=ERROR)
+P3 batch,P3_batch6,s03,1,t2-runbook-1,8,7,Run `opsctl heap dump --live`,opsctl heap dump --live,format_slip;context_edited_during_q,format_slip
+P3 batch,P3_batch6,s03,3,t3-rootcause-2,12,9,"orders, none, tom.brennan","orders, d-1006, priya.nair",gave_up;context_edited_during_q,reasoning_error? (gave up on deploy)
+P3 batch,P3_batch6,s08,2,t1-oncall-2,2,3,aisha.bello,jonas.berg,answered_fast,reasoning_error? (on-call guessed)
+P3 batch,P3_batch6,s08,3,t2-runbook-2,6,6,started remediation in the incident channel,opsctl idp backoff --minutes 15,context_edited_during_q,reasoning_error? (copied runbook preamble)
+P3 batch,P3_batch6,s12,2,t1-errcount-3,2,3,0,3,answered_fast;context_edited_during_q,reasoning_error? (errcount 0)
+P3 batch,P3_batch6,s12,3,t1-errcount-1,2,2,0,4,other,reasoning_error? (errcount 0)
+P4 summary,P4_summary8k,s03,3,t3-rootcause-2,2,9,"inventory, d-1003, yuki.tanaka","orders, d-1006, priya.nair",answered_fast;after_summary,"answered_from_memory (2 turns, no re-read)"
+P4 summary,P4_summary8k,s03,4,t1-most5xx-1,5,6,auth,inventory,after_summary,reasoning_error (stopped counting after 4 services)
+P4 summary,P4_summary8k,s08,2,t1-oncall-2,2,3,tom.brennan,jonas.berg,answered_fast;after_summary,reasoning_error (guessed from partial read)
+P4 summary,P4_summary8k,s08,3,t2-runbook-2,5,6,contact identity provider to increase rate limit,opsctl idp backoff --minutes 15,after_summary,reasoning_error (answered without reading the runbook step)
+P4 summary,P4_summary8k,s09,1,t2-config-3,9,9,"cache.ttl_s, 5, unknown","cache.ttl_s, 5, d-1057",gave_up;repeated_calls,"reasoning_error (CSV query syntax, gave up)"
+P4 summary,P4_summary8k_v2,s03,1,t2-runbook-1,8,7,Run `opsctl heap dump --live`,opsctl heap dump --live,format_slip,format_slip
+P4 summary,P4_summary8k_v2,s03,3,t3-rootcause-2,9,9,"orders, d-1006, jonas.berg","orders, d-1006, priya.nair",after_summary,reasoning_error (on-call guessed)
+P4 summary,P4_summary8k_v2,s09,1,t2-config-3,17,9,"cache.ttl_s, 5, unknown","cache.ttl_s, 5, d-1057",gave_up;repeated_calls,"reasoning_error (CSV query syntax, gave up)"
+P4 summary,P4_summary8k_v2,s09,3,t2-config-1,6,7,"db.pool_size, 8, unknown","db.pool_size, 8, d-1047",gave_up,"reasoning_error (CSV query syntax, gave up)"

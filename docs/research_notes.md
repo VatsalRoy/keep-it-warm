@@ -298,3 +298,22 @@ every session, temperature 0, one seed, concurrency 1 per server. Prompt v3 (fro
 - Bootstrap 95% CIs for accuracy and $ per solved question (paired by question).
 - Decide whether to rerun P0 (~20–35 GPU min) for a P0 noise estimate.
 - Systematic failure tagging across all policies; count extra turns caused by masking.
+
+## Phase 7: Final verdicts (session-level paired bootstrap, 2,000 resamples)
+
+| | Verdict | Key number (95% CI) |
+|---|---|---|
+| H1 | Supported | $/solved under sheet B vs P0: P1 2.29x [1.64, 3.80], P2 2.62x [1.83, 5.12], P3 1.51x [1.06, 2.57] |
+| H2 | Partly | Batching cut P2's 2.62x to 1.51x, still above P0; cadence 3/6/10 -> +61%/+14%/+2% cost (B) |
+| H3 | Supported | Timestamp bug: 0% cached, 6.6x $/solved (4 sessions), above any policy (max 2.6x) |
+| H4 | Not supported as stated | P0 itself loses 12 pts on Q3-4 vs Q1-2; no policy significantly worse; clue position confounded with tier |
+
+- Accuracy: every policy below P0 (-6 to -12 pts), none significant (all CIs reach 0; P2 -12 [-27, +0]).
+- P4 summary: the only policy tied with P0 on cost (1.11x [0.95, 1.33]) and the fastest
+  (p95 TTFT 6.0 s vs 10.5 s), because its prompts stay short.
+- Hidden cost of masking: P2 +1.27 turns per question (27/48 questions took longer).
+- Failure tags (hand-read, P2 and P4): about 1/3 of P2's losses were caused by masking (lost clue x2,
+  re-read loop x1); 1/9 of P4's by the summary (answered from memory). The rest match the
+  run-to-run noise seen in Phase 6.
+- Clearest example: P2 s05 Q3, "others have 0", where the "others" were the masked outputs,
+  including the right answer (orders, 19).
