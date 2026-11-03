@@ -8,7 +8,7 @@ A reproducible benchmark that measures what context management *really* costs a 
 tool-using AI agent once prompt caching is counted. Qwen3-4B on vLLM, free Kaggle T4 GPUs,
 exact-answer grading, per-request cache telemetry, 79 tests.
 
-📄 [Paper (IEEE format, PDF)](docs/report.pdf) · 📝 [Paper (Markdown)](docs/report.md) · 🔬 [Research notes](docs/research_notes.md) · 🧪 [Interactive trace viewer](#) <!-- add the Hugging Face Space link in Phase 8B -->
+📄 [Paper](paper/keep_it_warm.pdf) · 📝 [Paper (Markdown)](docs/report.md) · 🔬 [Research notes](docs/research_notes.md) · 🧪 [Interactive trace viewer](#) <!-- add the Hugging Face Space link in Phase 8B -->
 
 ---
 
