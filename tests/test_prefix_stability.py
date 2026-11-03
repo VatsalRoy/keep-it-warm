@@ -87,6 +87,7 @@ def test_p4_summary_breaks_only_right_after_a_summary_call(world):
         assert not early(rows[i])                    # the summary REQUEST itself extends the cached prompt
         assert rows[i + 1]["active_context_tokens"] < rows[i]["active_context_tokens"]  # and it shrinks the context
     assert not any(m["kind"] == "summary" for m in ep["transcript"])  # the full history itself is untouched
+    assert len(ep["policy_notes"]) == len(folds) and "fake summary" in ep["policy_notes"][0]["summary"]
 
 
 def test_p5_timestamp_breaks_at_the_very_start_every_turn(world):

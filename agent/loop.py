@@ -128,6 +128,7 @@ def run_episode(tasks: list[dict] | dict, desk: IncidentDesk, client, policy, se
         "episode_id": episode_id, "session_id": session_id, "policy": policy.name, "seed": seed,
         "n_questions": n, "n_correct": sum(r["correct"] for r in results), "questions": results,
         "turns": len(rows), "end_reason": end_reason, "wall_s": round(time.perf_counter() - t_start, 1),
+        "policy_notes": policy.notes,
         "transcript": [{"role": m["role"], "kind": m["kind"], "content": m["content"]} for m in history],
     }
     return rows, summary

@@ -37,6 +37,7 @@ class SummaryFold(Policy):
         request = view + [{"role": "user", "kind": "task", "content": SUMMARY_REQUEST}]
         reply = self.client.chat(request)
         self.calls.append((request, reply))
+        self.notes.append({"turn": turn, "history_len": len(history), "summary": reply.text})
         question = next(m["content"] for m in reversed(history) if m["kind"] == "task")
         self.summary_msg = {"role": "user", "kind": "summary", "content":
                             f"Summary of your work so far:\n{reply.text.strip()}\n\n"

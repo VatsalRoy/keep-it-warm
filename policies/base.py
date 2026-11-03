@@ -16,6 +16,7 @@ class Policy:
 
     def __init__(self) -> None:
         self.calls: list[tuple[list[dict], object]] = []  # (messages sent, Reply) for extra model calls
+        self.notes: list[dict] = []  # anything worth saving with the episode (e.g. P4's summaries)
 
     def build(self, history: list[dict], turn: int) -> list[dict]:
         raise NotImplementedError
