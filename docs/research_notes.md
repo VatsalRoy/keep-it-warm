@@ -216,3 +216,85 @@ as a deviation and adjusted P4's threshold from 16K to 8K.
 
 ### Status
 P0 baseline accepted. Next: Phase 5, the context policies P1–P5 with prefix-stability tests.
+
+## Phase 6: Main experiment results (raw, before analysis)
+
+**Date:** 2026-11-02 / 03
+**Setup:** Kaggle 2x Tesla T4, one vLLM 0.32.0 server per GPU (ports 8000/8001),
+Qwen3-4B-Instruct-2507 fp16, max-model-len 28,672, prefix caching on, cache reset before
+every session, temperature 0, one seed, concurrency 1 per server. Prompt v3 (frozen).
+**Workload:** 12 sessions x 4 questions = 48 questions per full run.
+**Runtime:** 7 jobs, 0 failures. Matrix wall time ~3 h on 2 GPUs in parallel.
+
+### Main table (12 sessions, sheet A = 2x cache discount, sheet B = 10x)
+| Policy | Acc | Turns | Mean peak ctx | Cached | Tokens vs P0 | True $A vs P0 | True $B vs P0 | GPU min |
+|---|---|---|---|---|---|---|---|---|
+| P0 full history | 44% (21/48) | 276 | 11,132 | 93% | — | — | — | 32.6 |
+| P1 window (K=6) | 38% (18/48) | 295 | 6,226 | 37% | -46% | -14% | **+96%** | 47.2 |
+| P2 rolling mask (K=4) | 31% (15/48) | 337 | 6,994 | 61% | -23% | +1% | **+87%** | 52.5 |
+| P3 batched mask (every 6) | 35% (17/48) | 305 | 7,695 | 84% | -22% | -11% | +22% | 40.0 |
+| P4 summary at 8K (run 1) | 35% (17/48) | 282 | 8,649 | 90% | -28% | -22% | -6% | 32.0 |
+| P4 summary at 8K (run 2) | 40% (19/48) | 306 | — | — | — | — | ~-4% | ~33 |
+
+### Cost per solved question
+| Policy | Sheet A | Sheet B | B vs P0 |
+|---|---|---|---|
+| P0 | $0.0070 | **$0.090** | 1.0x |
+| P1 | $0.0071 | $0.205 | 2.3x |
+| P2 | $0.0099 | $0.235 | 2.6x |
+| P3 | $0.0077 | $0.136 | 1.5x |
+| P4 (avg of 2 runs, 36/96) | ~$0.0068 | ~$0.100 | 1.1x |
+
+### Subsets (compared with P0 on the same sessions)
+- **P5 timestamp bug** (s01, s05, s07, s12): cached **0%** (P0: 94%). True cost +113% (A),
+  **+413% (B)**. $ per solved question (B): $0.329 vs $0.050 = **6.6x**. Accuracy 7/16 vs 9/16.
+- **P3 cadence sweep** (s02, s03, s08, s10; true $B vs P0): every 3 turns **+61%**, every 6
+  +14%, every 10 **+2%**. Tokens -11% / -30% / -36%. Accuracy 4/16, 4/16, 5/16 vs P0 7/16.
+  Masking every 3 turns also used the most turns (151 vs 108).
+
+### Preliminary verdicts (confidence intervals pending in Phase 7)
+- **H1 supported.** Token savings of 22–46% became cost INCREASES of 22–96% under sheet B.
+  Under sheet A the savings shrank (P1: -46% tokens -> -14% cost; P2: -23% tokens -> +1% cost).
+  Whether trimming saves money depends on the cache discount.
+- **H2 partly supported.** Batching cut the penalty (P2 +87% -> P3 +22% under B; P3 is cheaper
+  than P0 under A) and less frequent folding was cheaper (3 -> 6 -> 10: +61% -> +14% -> +2%),
+  but no batched variant beat P0 under sheet B.
+- **H3 supported.** One timestamp line (+413% under B) cost more than any policy choice (max +96%).
+- **H4 open.** Every policy lowered accuracy (31–40% vs 44%). The mechanisms are below; the
+  effect size needs Phase 7's confidence intervals.
+
+### Transcript findings
+- **Masking hides results the agent still needs.** P2 s11 Q2: after grepping all 8 services, the
+  earlier counts (including the winner, orders with 19) were masked; the agent answered api-gateway.
+- **Masking causes repeated work.** P2 s05 Q2 repeated the same failing searches until the
+  20-turn limit, because the evidence that they had failed was masked. P2 used 7.0 turns per
+  question vs 5.8 for P0 (+21%) and hit the question turn limit twice (P0: never).
+- **Summaries turn beliefs into "facts".** With summary texts saved (run 2, 7 folds):
+  - s03: the right timestamp was paired with the wrong deploy ID (d-1040 instead of d-1039),
+    and the agent submitted d-1040.
+  - s02: "most recent deploy before 08:39 is d-1025 (14:05)", a reasoning error stored as fact.
+  - s11: "under 2026-10-05 ... at line 23"; line 23 is the Oct 1 section.
+  - s10: the agent re-checked after the summary and answered correctly, the one helpful case.
+- **Summaries invite skipping verification.** P4 run 1 s03 Q3 answered in 2 turns from
+  remembered deploy facts (P0 took 9 turns and was right).
+
+### Noise floor (unplanned finding)
+- P4 run twice with identical code and temperature 0: **6/48 question outcomes flipped**
+  (17 vs 19 correct); 6 of 12 sessions diverged, one at the very first action.
+- Cause: GPU floating-point results are not bit-identical between runs; when two next tokens are
+  nearly tied, a tiny difference changes the choice and the conversation diverges from there.
+- Consequence: accuracy differences of about 2–3 questions are within noise. Cost is far more
+  stable (true $B: $1.778 vs $1.809, 2% apart).
+
+### Deviations from the original plan (for the README)
+- Episodes are 4-question sessions (Phase 4D), not single tasks.
+- P4 threshold is 8K instead of 16K (contexts peak ~11K on average).
+- One seed at temperature 0 (a second seed at T=0 would be identical by design); P4 run twice
+  to measure noise instead.
+- P5 and the cadence sweep use 4-session subsets to stay within the GPU budget.
+- P4 run 1 did not save summary texts (logging gap, fixed via `policy_notes`; run 2 has them).
+
+### Open items for Phase 7
+- Bootstrap 95% CIs for accuracy and $ per solved question (paired by question).
+- Decide whether to rerun P0 (~20–35 GPU min) for a P0 noise estimate.
+- Systematic failure tagging across all policies; count extra turns caused by masking.
